@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/di-wu/scim-filter-parser"
 	filter "github.com/di-wu/scim-filter-parser"
 )
 
@@ -85,7 +84,7 @@ func (p *Parser) ToSqlFromString(rawFilter string) (sq.SelectBuilder, error) {
 
 // ToSql transpiles parsed filter to a SQL query. The attribute map is used to map
 // schema properties to database columns.
-func (p *Parser) ToSql(expression scim.Expression) sq.SelectBuilder {
+func (p *Parser) ToSql(expression filter.Expression) sq.SelectBuilder {
 	baseQuery := sq.Select("*").From(p.TableName)
 
 	for _, join := range p.Joins {
