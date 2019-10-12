@@ -84,6 +84,10 @@ func TestFilterParser(t *testing.T) {
 
 		query, params, err := sqlQuery.ToSql()
 
+		if err != nil {
+			t.Errorf("failed to parse sql query, error %v", err)
+		}
+
 		if query != test.expected {
 			t.Errorf("Malformed SQL query, expected:\n%s\ngot:\n%s", test.expected, query)
 		}
@@ -124,14 +128,4 @@ func TestFilterParser(t *testing.T) {
 
 		rows.Close()
 	}
-}
-
-func contains(arr []string, item string) bool {
-	for _, el := range arr {
-		if el == item {
-			return true
-		}
-	}
-
-	return false
 }

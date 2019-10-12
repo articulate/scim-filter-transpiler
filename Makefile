@@ -1,9 +1,11 @@
+tools:
+	@curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.18.0
 
-
-integration:
-	docker-compose run --rm app make test
+lint:
+	@GOGC=30 ./bin/golangci-lint run ./
 
 test:
-	go test -v
+	docker-compose run --rm app go test -v
 
-jenkins: test
+build:
+	@go build
