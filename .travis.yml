@@ -1,0 +1,34 @@
+dist: trusty
+sudo: required
+services:
+- docker
+language: go
+
+env:
+  - DOCKER_COMPOSE_VERSION=1.4.2
+
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+install:
+- make build
+- make tools
+
+branches:
+  only:
+  - master
+
+matrix:
+  fast_finish: true
+  allow_failures:
+  - go: tip
+  include:
+  - go: "1.13.x"
+    name: "Code Lint"
+    script: make lint
+  - go: "1.13.x"
+    name: "Integration tests"
+    script: make test

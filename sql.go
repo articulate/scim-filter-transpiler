@@ -44,7 +44,7 @@ type (
 	Parser struct {
 		AttributeMap map[string]string
 		Joins        []string
-		params       []string
+		params       []interface{}
 		TableName    string
 	}
 )
@@ -58,9 +58,9 @@ func NewParser(attributeMap map[string]string, tableName string, joins []string)
 	}
 }
 
-// ToSqlFromString parses raw SCIM filter and then transpiles it to a SQL query. The attribute map is used to map
-// schema properties to database columns.
-func (p *Parser) ToSqlFromString(rawFilter string) (sq.SelectBuilder, error) {
+// ToSqlFromString parses raw SCIM filter and then transpiles it to a SQL query.
+// You can optionally customize the select query, it will by default select "*".
+func (p *Parser) ToSqlFromString(rawFilter, selectQuery string) (sq.SelectBuilder, error) {
 	var (
 		exp filter.Expression
 		sql sq.SelectBuilder
@@ -79,13 +79,17 @@ func (p *Parser) ToSqlFromString(rawFilter string) (sq.SelectBuilder, error) {
 		}
 	}
 
-	return p.ToSql(exp), nil
+	return p.ToSql(exp, selectQuery), nil
 }
 
-// ToSql transpiles parsed filter to a SQL query. The attribute map is used to map
-// schema properties to database columns.
-func (p *Parser) ToSql(expression filter.Expression) sq.SelectBuilder {
-	baseQuery := sq.Select("*").From(p.TableName)
+// ToSql transpiles parsed filter to a SQL query. You can optionally customize the select query, it will by default
+// select "*".
+func (p *Parser) ToSql(expression filter.Expression, selectQuery string) sq.SelectBuilder {
+	if selectQuery == "" {
+		selectQuery = "*"
+	}
+
+	baseQuery := sq.Select(selectQuery).From(p.TableName)
 
 	for _, join := range p.Joins {
 		baseQuery = baseQuery.JoinClause(join)
@@ -93,7 +97,7 @@ func (p *Parser) ToSql(expression filter.Expression) sq.SelectBuilder {
 
 	whereClause := p.process(expression, p.AttributeMap)
 
-	return baseQuery.Where(whereClause, p.params)
+	return baseQuery.Where(whereClause, p.params...)
 }
 
 func (p *Parser) process(exp filter.Expression, attrMap map[string]string) string {
@@ -111,7 +115,7 @@ func (p *Parser) process(exp filter.Expression, attrMap map[string]string) strin
 	}
 
 	if uniExp, ok := exp.(filter.UnaryExpression); ok {
-		return fmt.Sprintf("(%s %s)", getComparator(uniExp.CompareOperator), p.process(uniExp.X, attrMap))
+		return fmt.Sprintf("%s (%s)", getComparator(uniExp.CompareOperator), p.process(uniExp.X, attrMap))
 	}
 
 	// Should never happen but handled nonetheless
@@ -123,7 +127,7 @@ func (p *Parser) processAttributeStatement(exp filter.AttributeExpression, attrM
 	comparator := getComparator(exp.CompareOperator)
 	value := p.processAttributeValue(exp.CompareValue, exp.CompareOperator)
 
-	return fmt.Sprintf("%s %s %s", path, comparator, value)
+	return fmt.Sprintf(`%s %s %s`, path, comparator, value)
 }
 
 func (p *Parser) processAttributePath(path string, attrMap map[string]string) string {
@@ -137,14 +141,15 @@ func (p *Parser) processAttributePath(path string, attrMap map[string]string) st
 }
 
 func (p *Parser) processAttributeValue(value string, op filter.Token) string {
-	p.params = append(p.params, value)
 	tokens, ok := likeExpressionMap[op]
 
 	if !ok {
 		tokens = likeExpression{}
 	}
 
-	return tokens.Prefix + placeholder + tokens.Suffix
+	p.params = append(p.params, fmt.Sprintf("%s%s%s", tokens.Prefix, value, tokens.Suffix))
+
+	return placeholder
 }
 
 func getComparator(comparator filter.Token) string {
