@@ -13,13 +13,11 @@ go get github.com/articulate/scim-filter-transpiler
 ```go
 import "github.com/articulate/scim-filter-transpiler"
 
-// Error handling omitted for brevity
-parser, _ := scim.NewParserFromFilter(`not emails co "example.com"`)
-
 parser := NewParser(
   // Attribute map that tells us how to map our attribute names.
   // Any missing path will be returned as is.
   map[string]string{
+    "id":           "users.id",
     "username":     "users.username",
     "emails.value": "emails.value",
     "emails":       "emails.value",
@@ -31,9 +29,12 @@ parser := NewParser(
   []string{"LEFT JOIN emails ON emails.user_id = users.id"},
 )
 
-// Use ToSql if you already have a parsed filter
-sql, _ := parser.ToSqlFromString(test.filter)
+// Use ToSql if you already have a parsed filter.
+sql, _ := parser.ToSqlFromString(`userName eq "andy@example.com"`, "users.id")
 
 // We can even use Squirrel to query our DB, or use ToSql to get the raw query and params.
+// Builds the following query:
+// SELECT users.id FROM users LEFT JOIN emails ON emails.user_id = users.id WHERE users.username = ?
+// With andy@example.com as the only parameter
 rows, _ := sql.Limit(10).Offset(10).RunWith(db).Query()
 ```
