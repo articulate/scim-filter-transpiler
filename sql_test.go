@@ -74,15 +74,19 @@ func TestFilterParser(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		parser := NewParser(test.attributeMap, "users", test.joins)
+		parser := NewParser(test.attributeMap)
 
-		sqlQuery, err := parser.ToSqlFromString(test.filter, "distinct on (users.id) users.id")
+		query, params, err := parser.ToSqlFromString(test.filter)
 
 		if err != nil {
 			t.Errorf("Expected to create a filter parser without an error but received an error %v", err)
 		}
 
-		query, params, err := sqlQuery.ToSql()
+		sqlQuery := sq.Select("distinct on (users.id) users.id").
+			From("users").
+			Where(query, params...).
+			JoinClause("LEFT JOIN emails ON emails.user_id = users.id")
+		query, params, err = sqlQuery.ToSql()
 
 		if err != nil {
 			t.Errorf("failed to parse sql query, error %v", err)
