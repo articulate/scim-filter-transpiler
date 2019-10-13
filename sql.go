@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	sq "github.com/Masterminds/squirrel"
 	filter "github.com/di-wu/scim-filter-parser"
 )
 
@@ -43,61 +42,45 @@ type (
 	// Parser provides an interface for transpiling SCIM filter expression.
 	Parser struct {
 		AttributeMap map[string]string
-		Joins        []string
 		params       []interface{}
-		TableName    string
 	}
 )
 
 // NewParser builds a new filter parser from a filter expression.
-func NewParser(attributeMap map[string]string, tableName string, joins []string) *Parser {
+func NewParser(attributeMap map[string]string) *Parser {
 	return &Parser{
 		AttributeMap: attributeMap,
-		TableName:    tableName,
-		Joins:        joins,
 	}
 }
 
 // ToSqlFromString parses raw SCIM filter and then transpiles it to a SQL query.
 // You can optionally customize the select query, it will by default select "*".
-func (p *Parser) ToSqlFromString(rawFilter, selectQuery string) (sq.SelectBuilder, error) {
+func (p *Parser) ToSqlFromString(rawFilter string) (query string, params []interface{}, err error) {
 	var (
 		exp filter.Expression
-		sql sq.SelectBuilder
 	)
 
 	rawFilter = strings.TrimSpace(rawFilter)
 
 	if rawFilter != "" {
-		var err error
-
 		parser := filter.NewParser(strings.NewReader(rawFilter))
 		exp, err = parser.Parse()
 
 		if err != nil {
-			return sql, err
+			return
 		}
 	}
 
-	return p.ToSql(exp, selectQuery), nil
+	query, params = p.ToSql(exp)
+	return
 }
 
 // ToSql transpiles parsed filter to a SQL query. You can optionally customize the select query, it will by default
 // select "*".
-func (p *Parser) ToSql(expression filter.Expression, selectQuery string) sq.SelectBuilder {
-	if selectQuery == "" {
-		selectQuery = "*"
-	}
-
-	baseQuery := sq.Select(selectQuery).From(p.TableName)
-
-	for _, join := range p.Joins {
-		baseQuery = baseQuery.JoinClause(join)
-	}
-
+func (p *Parser) ToSql(expression filter.Expression) (query string, params []interface{}) {
 	whereClause := p.process(expression, p.AttributeMap)
 
-	return baseQuery.Where(whereClause, p.params...)
+	return whereClause, p.params
 }
 
 func (p *Parser) process(exp filter.Expression, attrMap map[string]string) string {
