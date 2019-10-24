@@ -78,35 +78,40 @@ func (p *Parser) ToSqlFromString(rawFilter string) (query string, params []inter
 // ToSql transpiles parsed filter to a SQL query. You can optionally customize the select query, it will by default
 // select "*".
 func (p *Parser) ToSql(expression filter.Expression) (query string, params []interface{}) {
-	whereClause := p.process(expression, p.AttributeMap)
+	whereClause := p.process(expression, p.AttributeMap, []string{})
 
 	return whereClause, p.params
 }
 
-func (p *Parser) process(exp filter.Expression, attrMap map[string]string) string {
+func (p *Parser) process(exp filter.Expression, attrMap map[string]string, prefix []string) string {
 	if attrExp, ok := exp.(filter.AttributeExpression); ok {
-		return p.processAttributeStatement(attrExp, attrMap)
+		return p.processAttributeStatement(attrExp, attrMap, prefix)
 	}
 
 	if biExp, ok := exp.(filter.BinaryExpression); ok {
 		return fmt.Sprintf(
 			"(%s %s %s)",
-			p.process(biExp.X, attrMap),
+			p.process(biExp.X, attrMap, prefix),
 			getComparator(biExp.CompareOperator),
-			p.process(biExp.Y, attrMap),
+			p.process(biExp.Y, attrMap, prefix),
 		)
 	}
 
 	if uniExp, ok := exp.(filter.UnaryExpression); ok {
-		return fmt.Sprintf("%s (%s)", getComparator(uniExp.CompareOperator), p.process(uniExp.X, attrMap))
+		return fmt.Sprintf("%s (%s)", getComparator(uniExp.CompareOperator), p.process(uniExp.X, attrMap, prefix))
+	}
+
+	if valPath, ok := exp.(filter.ValuePath); ok {
+		return p.process(valPath.ValueExpression, attrMap, append(prefix, valPath.AttributeName))
 	}
 
 	// Should never happen but handled nonetheless
 	panic("unsupported expression type")
 }
 
-func (p *Parser) processAttributeStatement(exp filter.AttributeExpression, attrMap map[string]string) string {
-	path := p.processAttributePath(exp.AttributePath.AttributeName, attrMap)
+func (p *Parser) processAttributeStatement(exp filter.AttributeExpression, attrMap map[string]string, prefix []string) string {
+	prefix = append(prefix, strings.Split(exp.AttributePath.String(), ".")...)
+	path := p.processAttributePath(strings.Join(prefix, "."), attrMap)
 	comparator := getComparator(exp.CompareOperator)
 	value := p.processAttributeValue(exp.CompareValue, exp.CompareOperator)
 
