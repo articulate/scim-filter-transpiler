@@ -2,8 +2,6 @@ github.com/Masterminds/squirrel v1.1.0 h1:baP1qLdoQCeTw3ifCdOq2dkYc6vGcmRdaociKL
 github.com/Masterminds/squirrel v1.1.0/go.mod h1:yaPeOnPG5ZRwL9oKdTsO/prlkPbXWZlRVMQ/gGlzIuA=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/di-wu/scim-filter-parser v0.0.0-20190602150935-cdaa38509d09 h1:GYqnpcuwqmben6WKAmtUI9yayGoZf1RnqDzLkbLLuKc=
-github.com/di-wu/scim-filter-parser v0.0.0-20190602150935-cdaa38509d09/go.mod h1:Q9X8NLzgdqI3Z0XcbiPpdAEql664lC6ExBN7B6ZLhco=
 github.com/di-wu/scim-filter-parser v0.0.0-20191017234150-dcd375ae4d4f h1:61Wic4hAq/dfk/X5HN7stBSWWu3nb63g5Azx2+dXIyQ=
 github.com/di-wu/scim-filter-parser v0.0.0-20191017234150-dcd375ae4d4f/go.mod h1:Q9X8NLzgdqI3Z0XcbiPpdAEql664lC6ExBN7B6ZLhco=
 github.com/go-sql-driver/mysql v1.4.1 h1:g24URVg0OFbNUTx9qqY1IRZ9D9z3iPyi5zKhQZpNwpA=
