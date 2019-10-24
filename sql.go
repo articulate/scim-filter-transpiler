@@ -106,7 +106,7 @@ func (p *Parser) process(exp filter.Expression, attrMap map[string]string) strin
 }
 
 func (p *Parser) processAttributeStatement(exp filter.AttributeExpression, attrMap map[string]string) string {
-	path := p.processAttributePath(exp.AttributePath, attrMap)
+	path := p.processAttributePath(exp.AttributePath.AttributeName, attrMap)
 	comparator := getComparator(exp.CompareOperator)
 	value := p.processAttributeValue(exp.CompareValue, exp.CompareOperator)
 
